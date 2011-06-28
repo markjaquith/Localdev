@@ -19,37 +19,40 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 require 'digest/md5'
-def sudome
-  if ENV["USER"] != "root"
-    exec("sudo #{ENV['_']} #{ARGV.join(' ')}")
-  end
-end
 
 class Localdev
+
 	def initialize
-		sudome
 		@debug = false
-		@version = '0.1'
+		@version = '0.2'
 		@localdev = '/etc/hosts-localdev'
 		@hosts = '/etc/hosts'
 		@start = '#==LOCALDEV==#'
 		@end = '#/==LOCALDEV==#'
+		require_sudo if !ARGV.first.nil? && [:on, :off, :add, :remove].include?( ARGV.first.to_sym )
 		command = ARGV.shift
 		command = command.to_sym unless command.nil?
 		object = ARGV.shift
 		case command
 			when :"--v", :"--version"
-				self.info
+				info
 			when :on, :off, :status
-				self.send command
+				send command
 			when :add, :remove
-				object.nil? && self.exit_error_message("'localdev #{command}' requires you to provide a domain")
+				require_sudo
+				object.nil? && exit_error_message("'localdev #{command}' requires you to provide a domain")
 				File.open( @localdev, 'w' ) {|file| file.write('') } unless File.exists?( @localdev )
-				self.send command, object
+				send command, object
 			when nil, '--help', '-h'
-				self.exit_message "Usage: localdev [on|off|status]\n       localdev [add|remove] domain"
+				exit_message "Usage: localdev [on|off|status]\n       localdev [add|remove] domain"
 			else
-				self.exit_error_message "Invalid command"
+				exit_error_message "Invalid command"
+		end
+	end
+
+	def require_sudo
+		if ENV["USER"] != "root"
+			exec("sudo #{ENV['_']} #{ARGV.join(' ')}")
 		end
 	end
 
@@ -67,15 +70,15 @@ class Localdev
 	end
 
 	def exit_error_message message
-		self.exit_message '[ERROR] ' + message
+		exit_message '[ERROR] ' + message
 	end
 
 	def flush_dns
 		%x{dscacheutil -flushcache}
 	end
 
-	def do_on
-		self.do_off
+	def enable
+		disable
 		domains = []
 		File.open( @localdev, 'r' ) do |file|
 			domains = file.read.split("\n").uniq
@@ -93,12 +96,12 @@ class Localdev
 	end
 
 	def on
-		self.do_on
-		self.flush_dns
+		enable
+		flush_dns
 		puts "Turning Localdev on"
 	end
 
-	def do_off
+	def disable
 		hosts_content = []
 		File.open( @hosts, 'r' ) do |file|
 			started = false
@@ -107,7 +110,6 @@ class Localdev
 				hosts_content << line unless started
 				started = false if line.include? @end
 			end
-			# debug hosts_content.join("")
 		end
 		while "\n" == hosts_content.last
 			hosts_content.pop
@@ -118,8 +120,8 @@ class Localdev
 	end
 
 	def off
-		self.do_off
-		self.flush_dns
+		disable
+		flush_dns
 		puts "Turning Localdev off"
 	end
 
@@ -136,26 +138,24 @@ class Localdev
 		end
 	end
 
-	def update_hosts
-	end
-
 	def add domain
-		self.update_localdev {|domains| domains << domain unless domains.include? domain }
-		self.do_on if :on == self.get_status
+		update_localdev {|domains| domains << domain unless domains.include? domain }
+		enable if :on == get_status
 		puts "Added '#{domain}'"
-		self.status
+		status
 	end
 
 	def remove domain
-		self.update_localdev {|domains| domains = domains.delete domain }
-		self.do_on if :on == self.get_status
+		update_localdev {|domains| domains = domains.delete domain }
+		enable if :on == get_status
 		puts "Removed '#{domain}'"
-		self.status
+		status
 	end
 
 	def get_status
 		# do magic
 		status = :off
+		return status unless File.readable? @hosts
 		File.open( @hosts, 'r' ) do |file|
 			while line = file.gets
 				if line.include? @start
@@ -168,7 +168,7 @@ class Localdev
 	end
 
 	def status
-		puts "Localdev is #{self.get_status}"
+		puts "Localdev is #{get_status}"
 	end
 
 end
