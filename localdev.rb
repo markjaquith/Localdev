@@ -1,7 +1,14 @@
 #!/usr/bin/env ruby
 require 'digest/md5'
+def sudome
+  if ENV["USER"] != "root"
+    exec("sudo #{ENV['_']} #{ARGV.join(' ')}")
+  end
+end
+
 class Localdev
 	def initialize
+		sudome
 		@debug = false
 		@localdev = '/etc/hosts-localdev'
 		@hosts = '/etc/hosts'
