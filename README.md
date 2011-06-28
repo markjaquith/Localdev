@@ -31,3 +31,7 @@ alias localdev="ruby /path/to/your/localdev.rb"
 ```
 
 Your list of local development domains is kept in `/etc/hosts-localdev`.
+
+## License & Copyright
+
+Localdev is Copyright Mark Jaquith 2011, and is offered under the terms of the GNU General Public License, version 2, or any later version.
