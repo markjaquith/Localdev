@@ -28,7 +28,10 @@ class Localdev
 		@hosts = '/etc/hosts'
 		@start = '#==LOCALDEV==#'
 		@end = '#/==LOCALDEV==#'
-		require_sudo if !ARGV.first.nil? && [:on, :off, :add, :remove].include?( ARGV.first.to_sym )
+		if !ARGV.first.nil? && [:on, :off, :add, :remove].include?( ARGV.first.to_sym )
+			require_sudo
+			ensure_localdev_exists
+		end
 		command = ARGV.shift
 		command = command.to_sym unless command.nil?
 		object = ARGV.shift
@@ -40,7 +43,7 @@ class Localdev
 			when :add, :remove
 				require_sudo
 				object.nil? && exit_error_message("'localdev #{command}' requires you to provide a domain")
-				File.open( @localdev, 'w' ) {|file| file.write('') } unless File.exists?( @localdev )
+				ensure_localdev_exists
 				send command, object
 			when nil, '--help', '-h'
 				exit_message "Usage: localdev [on|off|status]\n       localdev [add|remove] domain"
@@ -74,6 +77,10 @@ class Localdev
 
 	def flush_dns
 		%x{dscacheutil -flushcache}
+	end
+
+	def ensure_localdev_exists
+		File.open( @localdev, 'w' ) {|file| file.write('') } unless File.exists?( @localdev )
 	end
 
 	def enable
