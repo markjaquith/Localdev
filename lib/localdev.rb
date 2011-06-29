@@ -20,7 +20,7 @@
 require 'digest/md5'
 
 class Localdev
-	VERSION = '0.3'
+	VERSION = '0.3.0'
 
 	def initialize
 		@debug = false
