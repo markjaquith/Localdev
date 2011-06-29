@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 #
 # Localdev - Hosts file tool for local development
 #
@@ -21,10 +20,10 @@
 require 'digest/md5'
 
 class Localdev
+	VERSION = '0.3'
 
 	def initialize
 		@debug = false
-		@version = '0.2'
 		@localdev = '/etc/hosts-localdev'
 		@hosts = '/etc/hosts'
 		@start = '#==LOCALDEV==#'
@@ -57,7 +56,7 @@ class Localdev
 	end
 
 	def info
-		puts "Localdev #{@version}"
+		puts "Localdev #{self.class::VERSION}"
 	end
 
 	def debug message
@@ -172,5 +171,3 @@ class Localdev
 	end
 
 end
-
-Localdev.new
