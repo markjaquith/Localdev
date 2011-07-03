@@ -20,7 +20,7 @@
 require 'digest/md5'
 
 class Localdev
-	VERSION = '0.3.0'
+	VERSION = '0.3.1'
 
 	def initialize
 		@debug = false
@@ -28,7 +28,7 @@ class Localdev
 		@hosts = '/etc/hosts'
 		@start = '#==LOCALDEV==#'
 		@end = '#/==LOCALDEV==#'
-		if !ARGV.first.nil? && [:on, :off, :add, :remove].include?( ARGV.first.to_sym )
+		if !ARGV.first.nil? && [:on, :off, :add, :remove, :list].include?( ARGV.first.to_sym )
 			require_sudo
 			ensure_localdev_exists
 		end
@@ -38,7 +38,7 @@ class Localdev
 		case command
 			when :"--v", :"--version"
 				info
-			when :on, :off, :status
+			when :on, :off, :status, :list
 				send command
 			when :add, :remove
 				require_sudo
@@ -159,7 +159,6 @@ class Localdev
 	end
 
 	def get_status
-		# do magic
 		status = :off
 		return status unless File.readable? @hosts
 		File.open( @hosts, 'r' ) do |file|
@@ -171,6 +170,12 @@ class Localdev
 			end
 		end
 		return status
+	end
+
+	def list
+		File.open( @localdev, 'r' ) do |file|
+			puts file.read
+		end
 	end
 
 	def status

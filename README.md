@@ -4,6 +4,7 @@ Localdev is a Ruby command line script to register domains that you sometimes us
 
 Available commands:
 
+* `localdev list` — lists the localdev domains
 * `localdev add {domain}` — adds the specified domain
 * `localdev remove {domain}` — removes the specified domain
 * `localdev on` — enables local development
