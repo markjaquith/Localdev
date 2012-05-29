@@ -13,6 +13,14 @@ Available commands:
 
 Note: if local development is on, `add` and `remove` commands will immediately update the hosts file and trigger a DNS flush.
 
+Tip: To avoid being prompted by `sudo` for your password, you can add a line like this to your `/etc/sudoers` file (replace `markjaquith` with your user name):
+
+```
+markjaquith ALL = NOPASSWD: /usr/bin/localdev
+```
+
+Then, just run the a
+
 ## Installation
 
 To install Localdev, use RubyGems:
