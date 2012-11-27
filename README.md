@@ -19,8 +19,6 @@ Tip: To avoid being prompted by `sudo` for your password, you can add a line lik
 markjaquith ALL = NOPASSWD: /usr/bin/localdev
 ```
 
-Then, just run the a
-
 ## Installation
 
 To install Localdev, use RubyGems:
