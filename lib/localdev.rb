@@ -20,7 +20,7 @@
 require 'digest/md5'
 
 class Localdev
-	VERSION = '0.3.1'
+	VERSION = '0.3.2'
 
 	def initialize
 		@debug = false
@@ -28,7 +28,7 @@ class Localdev
 		@hosts = '/etc/hosts'
 		@start = '#==LOCALDEV==#'
 		@end = '#/==LOCALDEV==#'
-		if !ARGV.first.nil? && [:on, :off, :add, :remove, :list].include?( ARGV.first.to_sym )
+		if !ARGV.first.nil? && [:on, :off, :add, :remove, :clear].include?( ARGV.first.to_sym )
 			require_sudo
 			ensure_localdev_exists
 		end
@@ -38,7 +38,7 @@ class Localdev
 		case command
 			when :"--v", :"--version"
 				info
-			when :on, :off, :status, :list
+			when :on, :off, :status, :list, :clear
 				send command
 			when :add, :remove
 				require_sudo
@@ -46,7 +46,7 @@ class Localdev
 				ensure_localdev_exists
 				send command, object
 			when nil, '--help', '-h'
-				exit_message "Usage: localdev [on|off|status]\n       localdev [add|remove] domain"
+				exit_message "Usage: localdev [on|off|status|list|clear]\n       localdev [add|remove] domain"
 			else
 				exit_error_message "Invalid command"
 		end
@@ -155,6 +155,13 @@ class Localdev
 		update_localdev {|domains| domains = domains.delete domain }
 		enable if :on == get_status
 		puts "Removed '#{domain}'"
+		status
+	end
+
+	def clear
+		update_localdev {|domains| domains.clear() }
+		enable if :on == get_status
+		puts "Removed all domains"
 		status
 	end
 
