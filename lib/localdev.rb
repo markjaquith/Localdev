@@ -1,7 +1,7 @@
 #
 # Localdev - Hosts file tool for local development
 #
-# Copyright 2011 by Mark Jaquith
+# Copyright 2011-2015 by Mark Jaquith
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,12 +18,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 require 'digest/md5'
+require 'yaml'
 
 class Localdev
-	VERSION = '0.3.2'
+	VERSION = '0.4.0'
 
 	def initialize
-		@debug = false
+		@debugMode = false
 		@localdev = '/etc/hosts-localdev'
 		@hosts = '/etc/hosts'
 		@start = '#==LOCALDEV==#'
@@ -44,9 +45,13 @@ class Localdev
 				require_sudo
 				object.nil? && exit_error_message("'localdev #{command}' requires you to provide a domain")
 				ensure_localdev_exists
-				send command, object
+				if ARGV.first.nil?
+					send command, object
+				else
+					send command, object, ARGV.first
+				end
 			when nil, '--help', '-h'
-				exit_message "Usage: localdev [on|off|status|list|clear]\n       localdev [add|remove] domain"
+				exit_message "Usage: localdev [on|off|status|list|clear]\n       localdev [add|remove] domain [ip-address]"
 			else
 				exit_error_message "Invalid command"
 		end
@@ -63,7 +68,7 @@ class Localdev
 	end
 
 	def debug message
-		puts message if @debug
+		puts message if @debugMode
 	end
 
 	def exit_message message
@@ -87,7 +92,8 @@ class Localdev
 		disable
 		domains = []
 		File.open( @localdev, 'r' ) do |file|
-			domains = file.read.split("\n").uniq
+			domains = YAML::load file.read
+			domains = [] unless domains.respond_to? 'each'
 		end
 		File.open( @hosts, 'a' ) do |file|
 			file.puts "\n"
@@ -95,7 +101,8 @@ class Localdev
 			file.puts "# The md5 dummy entries are here so that things like MAMP Pro don't"
 			file.puts "# discourtiously remove our entries"
 			domains.each do |domain|
-				file.puts "127.0.0.1 #{Digest::MD5.hexdigest(domain)}.#{domain} #{domain}"
+				# puts domain.inspect
+				file.puts "#{domain['ip']} #{Digest::MD5.hexdigest(domain['domain'])}.#{domain['domain']} #{domain['domain']}"
 			end
 			file.puts @end
 		end
@@ -134,32 +141,43 @@ class Localdev
 	def update_localdev
 		domains = []
 		File.open( @localdev, 'r' ) do |file|
-			domains = file.read.split("\n")
+			domains = YAML::load file.read
+			domains = [] unless domains.respond_to? 'each'
 			debug domains.inspect
 			yield domains
 			debug domains.inspect
 		end
 		File.open( @localdev, 'w' ) do |file|
-			file.puts domains
+			file.puts YAML::dump domains
 		end
 	end
 
-	def add domain
-		update_localdev {|domains| domains << domain unless domains.include? domain }
+	def add domain, ip='127.0.0.1'
+		domain = {
+			'domain' => domain,
+			'ip' => ip
+		}
+
+		_remove domain['domain']
+		update_localdev {|domains| domains << domain }
 		enable if :on == get_status
-		puts "Added '#{domain}'"
+		puts "Added #{domain['domain']} => #{domain['ip']}"
 		status
 	end
 
 	def remove domain
-		update_localdev {|domains| domains = domains.delete domain }
+		_remove domain
 		enable if :on == get_status
-		puts "Removed '#{domain}'"
+		puts "Removed #{domain}"
 		status
 	end
 
+	def _remove domain
+		update_localdev {|domains| domains = domains.delete_if{|item| item['domain'] == domain } }
+	end
+
 	def clear
-		update_localdev {|domains| domains.clear() }
+		update_localdev {|domains| domains.clear }
 		enable if :on == get_status
 		puts "Removed all domains"
 		status
@@ -181,7 +199,10 @@ class Localdev
 
 	def list
 		File.open( @localdev, 'r' ) do |file|
-			puts file.read
+			domains = YAML::load file.read
+			domains.each do |domain|
+				puts "#{domain['domain']} => #{domain['ip']}"
+			end
 		end
 	end
 
