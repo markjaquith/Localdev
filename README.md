@@ -5,7 +5,8 @@ Localdev is a Ruby command line script to register domains that you sometimes us
 Available commands:
 
 * `localdev list` — lists the localdev domains
-* `localdev add {domain}` — adds the specified domain
+* `localdev add {domain}` — adds the specified domain (pointing to 127.0.0.1)
+* `localdev add {domain} {ip}` — adds the specified domain (pointing to the IP you specified)
 * `localdev remove {domain}` — removes the specified domain
 * `localdev on` — enables local development
 * `localdev off` — disables local development
@@ -29,8 +30,8 @@ sudo gem install localdev
 
 ## Notes
 
-Your list of local development domains is kept in `/etc/hosts-localdev`.
+Your list of local development domains is kept in `/etc/hosts-localdev` as a YAML file.
 
 ## License & Copyright
 
-Localdev is Copyright Mark Jaquith 2011, and is offered under the terms of the GNU General Public License, version 2, or any later version.
+Localdev is Copyright Mark Jaquith 2011–2015, and is offered under the terms of the GNU General Public License, version 2, or any later version.
